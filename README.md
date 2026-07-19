@@ -2,9 +2,7 @@
 
 An enterprise-grade, stateful AI orchestration system designed to automate the lifecycle of open-source software issue triaging. Built on **LangGraph**, this production-style engine executes complex multi-step reasoning over live repository artifacts. It leverages a dual-index **Pinecone Hybrid Search** architecture (Dense + Sparse BM25) to map incoming bugs against historical contexts, track internal code dependencies via syntax-aware chunking, isolate regression authors using localized Git Blame mechanics, and maintain rigorous telemetry and evaluation safeguards.
 
----
-
-## 🏗️ System Architecture
+## System Architecture
 
 The engine operates as a stateful, event-driven directed acyclic graph (DAG) managed by LangGraph. Transitions between analytical phases are governed deterministically via state updates or conditionally by LLM edge classifiers.
 
@@ -52,7 +50,8 @@ graph LR
     J --> DB3
 ```
 ## Repository Layout:
-Agentic_AI_IssueAutomation/
+```text
+github-issue-triage-agent/
 ├── data/
 │   ├── embed.py                # Pinecone indexing and vectorization pipelines
 │   └── ingest.py               # Idempotent GitHub REST/GraphQL fetching script
@@ -88,6 +87,7 @@ Agentic_AI_IssueAutomation/
 │       └── github_api.py       # Intermediary rate-limited API module
 └── tests/
     └── test_agent.py           # Unit and integration test suites
+```
 
 ## Technical Stack:
 - **Orchestration:** `LangGraph` (Stateful multi-step workflows with structural checkpointing)
