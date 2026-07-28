@@ -6,49 +6,11 @@ An enterprise-grade, stateful AI orchestration system designed to automate the l
 
 The engine operates as a stateful, event-driven directed acyclic graph (DAG) managed by LangGraph. Transitions between analytical phases are governed deterministically via state updates or conditionally by LLM edge classifiers.
 
-```mermaid
-graph LR
-    %% Color Palette Configurations
-    classDef ingest fill:#E3F2FD,stroke:#1E88E5,stroke-width:2px,color:#0D47A1;
-    classDef node fill:#FFFFFF,stroke:#37474F,stroke-width:2px,color:#263238;
-    classDef duplicate fill:#FFEBEE,stroke:#E53935,stroke-width:2px,color:#B71C1C;
-    classDef db fill:#E8F5E9,stroke:#43A047,stroke-width:2px,color:#1B5E20;
-    classDef checkpoint fill:#FFF8E1,stroke:#FFB300,stroke-width:2px,color:#FF6F00;
-    classDef external fill:#F5F5F5,stroke:#757575,stroke-width:2px,color:#212121;
+<p align="center">
+    <img width="600" height="720" alt="ArchitectureDiagram" src="https://github.com/user-attachments/assets/7e8cc567-03e8-41bd-b76c-a1a1eeb8adf8" />
+</p>
 
-    %% Components & Services
-    A[Issue Ingest]:::ingest
-    B(Classify Issue):::node
-    C(Retrieve Similar Issues):::node
-    D{Duplicate Check}:::duplicate
-    E(Retrieve Code Context):::node
-    F(Git Blame Analysis):::node
-    G(Generate Triage Plan):::node
-    H{⏸️ Human Checkpoint}:::checkpoint
-    I(Draft Response):::node
-    J(Output & Persist):::node
 
-    DB1[(Pinecone: Issues)]:::db
-    DB2[(Pinecone: Code)]:::db
-    DB3[(PostgreSQL / Langfuse)]:::db
-    API1[GitHub GraphQL]:::external
-
-    %% Sequential Execution Pipeline
-    A --> B --> C
-    C <--> DB1
-    C --> D
-    
-    %% Conditional State Routing
-    D -->|Match Found| J
-    D -->|Unique| E
-    
-    E <--> DB2
-    E --> F
-    F <--> API1
-    F --> G --> H
-    H -->|Resume| I --> J
-    J --> DB3
-```
 ## Repository Layout:
 ```text
 github-issue-triage-agent/
