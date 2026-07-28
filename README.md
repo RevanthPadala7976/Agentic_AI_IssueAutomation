@@ -6,7 +6,9 @@ An enterprise-grade, stateful AI orchestration system designed to automate the l
 
 The engine operates as a stateful, event-driven directed acyclic graph (DAG) managed by LangGraph. Transitions between analytical phases are governed deterministically via state updates or conditionally by LLM edge classifiers.
 
-<img width="600" height="720" alt="ArchitectureDiagram" src="https://github.com/user-attachments/assets/7e8cc567-03e8-41bd-b76c-a1a1eeb8adf8" />
+<p align="center">
+    <img width="600" height="720" alt="ArchitectureDiagram" src="https://github.com/user-attachments/assets/7e8cc567-03e8-41bd-b76c-a1a1eeb8adf8" />
+</p>
 
 
 ## Repository Layout:
