@@ -24,36 +24,8 @@ TODO:
 import requests
 import os
 from dotenv import load_dotenv
-
-
-def fetch_target_issues(target_count = 5, max_pages=10):
-    repo_issues = []
-    for page in range(1, max_pages + 1):
-        parameters = {
-            "state": "closed",
-            "page": page,
-            "per_page": 100,
-            "sort": "created",
-            "direction": "desc"
-        }
-        response = requests.get(URL, headers=header, params=parameters)  # API call with required params
-
-        # break if response is not "successful" (200)
-        if response.status_code != 200:
-            break
-
-        # store the response in a variable
-        data = response.json()
-        if not data:
-            break
-
-        for item in data:
-            # filter all the PR and take only real issues
-            if "pull_request" not in item:
-                repo_issues.append(item)
-                if len(repo_issues) >= target_count:
-                    return repo_issues
-    return repo_issues
+from datetime import datetime
+from src.db.models import IssueModel, SessionLocal
 
 
 load_dotenv()
@@ -67,22 +39,79 @@ header = {"Accept": "application/vnd.github.v3+json"}
 if GITHUB_TOKEN:
     header["Authorization"] = f"token {GITHUB_TOKEN}"
 
+
+def fetch_target_issues(target_count=50, max_pages=10):
+    db = SessionLocal()
+    try:
+        existing_records = db.query(IssueModel.number).all()
+        existing_ids = set(r[0] for r in existing_records)
+        print(f"found {len(existing_ids)} existing records in database")
+        print(existing_ids)
+
+        integrated_count = 0
+        for page in range(50, max_pages + 1):
+            parameters = {
+                "state": "closed",
+                "page": page,
+                "per_page": 100,
+                "sort": "created",
+                "direction": "desc"
+            }
+            response = requests.get(URL, headers=header, params=parameters)  # API call with required params
+
+            # break if response is not "successful" (200)
+            if response.status_code != 200:
+                break
+
+            # store the response in a variable
+            data = response.json()
+            if not data:
+                break
+
+            for item in data:
+                # filter all the PR and take only real issues
+                if "pull_request" in item:
+                    continue
+                if item["number"] in existing_ids:
+                    continue
+
+                #Parse date
+                created_at_date = datetime.fromisoformat(item["created_at"].replace("Z", "+00:00"))
+
+                closed_at_date = (datetime.fromisoformat(item["closed_at"].replace("Z", "+00:00"))
+                                                        if item.get("closed_at")
+                                                        else None)
+                # extract label names
+                label_names = [label["name"] for label in item.get("labels", [])]
+                issue_obj = IssueModel(
+                    number = item["number"],
+                    title = item["title"],
+                    body = item.get("body"),
+                    state = item["state"],
+                    created_at = created_at_date,
+                    closed_at = closed_at_date,
+                    labels = label_names
+                )
+                db.add(issue_obj)
+                existing_ids.add(item["number"])
+                integrated_count += 1
+
+                if integrated_count >= target_count:
+                    break
+            db.commit()
+            print(f"Committed page {page}. Total issues integrated {integrated_count}")
+
+            if integrated_count >= target_count:
+                break
+
+        print(f"Ingestion complete! Added {integrated_count} new issues")
+    except Exception as e:
+        db.rollback()
+        print(f"Something went wrong: {e}")
+    finally:
+        db.close()
+
 # making an API call
 if __name__ == "__main__":
     print(f"Fetching clean issues from {GITHUB_OWNER}/{REPO}...")
-    repoIssues = fetch_target_issues(target_count=5, max_pages=10)
-
-    print(f"\nSuccessfully retrieved {len(repoIssues)} genuine issues:\n" + "-" * 60)
-
-    # Formatted terminal output displaying ID, Title, and Created At timestamp
-    for idx, issue in enumerate(repoIssues, start=1):
-        print(f"Issue #{idx}")
-        print(f"[number\t\t\t: {issue['id']}")
-        print(f"title\t\t: {issue['title']}")
-        print(f"body\t\t: {issue['body']}")
-        print(f"state\t\t: {issue['state']}")
-        print(f"created_at\t: {issue['created_at']}]")
-        print(f"closed_at\t\t: {issue['closed_at']}")
-        print(f"label\t\t: {issue['labels']}")
-        break
-        print("\n")
+    fetch_target_issues(target_count=470, max_pages=80)
